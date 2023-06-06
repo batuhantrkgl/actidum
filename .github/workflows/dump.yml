@@ -39,24 +39,19 @@ jobs:
       run: |
         git clone https://github.com/DumprX/DumprX && cd DumprX && aria2c ${{ github.event.inputs.DUMP_URL }} && ./dumper.sh ${{ github.event.inputs.DUMP_FILE_NAME }} 
 
-      
-    - name: Set Swap Space
-      uses: pierotofy/set-swap-space@master
-      with:
-        swap-size-gb: 12
 
-        - name: Upload to Release
+    - name: Upload to Release
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          DumprX/${{ github.event.inputs.DUMP_FILE_NAME }}/*
+          DumprX/${{ github.event.inputs.DUMP_FILE_NAME }}
         name: Dump .-.
         tag_name: ${{ github.run_id }}
         body: |
           ``${{ github.event.inputs.DUMP_URL }}``
           DUMP_FILE_NAME: [${{ github.event.inputs.DUMP_FILE_NAME }}]
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
         
       
