@@ -1,36 +1,62 @@
-# This is a basic workflow to help you get started with Actions
+name: Hosting...
 
-name: CI
-
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+    inputs:
+      DUMP_URL:
+        description: 'Dump URL'
+        required: true
+      DUMP_FILE_NAME:
+        description: "Dump's file name"
+        required: true
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+  Host:
+    if: github.event.repository.owner.id == github.event.sender.id
+    runs-on: ubuntu-20.04
+    # You can use either of the ubuntu-18.04 or ubuntu-20.04 runner
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
+    - name: Display Run Parameters
+      run: |
+        echo "::group::User Environment Variables"
+        echo "DUMP URL: ${{ github.event.inputs.DUMP_URL }}"
+        echo "Starting Command: ${{ github.event.inputs.STARTING_COMMAND }}"
+        echo "DUMP FILE NAME: ${{ github.event.inputs.DUMP_FILE_NAME }}"
+        echo "::endgroup::"
+ 
+    # You might want to Checkout your repo first, but not mandatory
+    - name: Check Out
+      uses: actions/checkout@v3
+    # Cleanup The Actions Workspace Using Custom Composite Run Actions
+    - name: Install dependencies
+      run: |
+        curl -S https://raw.githubusercontent.com/DumprX/DumprX/main/setup.sh > setup.sh && bash setup.sh
+        sudo apt install -y aria2;
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
 
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
-        run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+    - name: Download & Dump Device
+      run: |
+        git clone https://github.com/DumprX/DumprX && cd DumprX && aria2c ${{ github.event.inputs.DUMP_URL }} && ./dumper.sh ${{ github.event.inputs.DUMP_FILE_NAME }} 
+
+      
+    - name: Set Swap Space
+      uses: pierotofy/set-swap-space@master
+      with:
+        swap-size-gb: 12
+
+        - name: Upload to Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          DumprX/${{ github.event.inputs.DUMP_FILE_NAME }}/*
+        name: Dump .-.
+        tag_name: ${{ github.run_id }}
+        body: |
+          ``${{ github.event.inputs.DUMP_URL }}``
+          DUMP_FILE_NAME: [${{ github.event.inputs.DUMP_FILE_NAME }}]
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+        
+      
