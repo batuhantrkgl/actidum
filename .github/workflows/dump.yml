@@ -1,4 +1,4 @@
-name: Hosting...
+name: Dump
 
 on:
   workflow_dispatch:
@@ -12,7 +12,7 @@ on:
 
 
 jobs:
-  Host:
+  Dump:
     if: github.event.repository.owner.id == github.event.sender.id
     runs-on: ubuntu-20.04
     # You can use either of the ubuntu-18.04 or ubuntu-20.04 runner
@@ -31,20 +31,21 @@ jobs:
     # Cleanup The Actions Workspace Using Custom Composite Run Actions
     - name: Install dependencies
       run: |
-        curl -S https://raw.githubusercontent.com/DumprX/DumprX/main/setup.sh > setup.sh && bash setup.sh
+        mkdir workspace
+        cd workspace && curl -S https://raw.githubusercontent.com/DumprX/DumprX/main/setup.sh > setup.sh && bash setup.sh
         sudo apt install -y aria2;
 
 
     - name: Download & Dump Device
       run: |
-        git clone https://github.com/DumprX/DumprX && cd DumprX && aria2c ${{ github.event.inputs.DUMP_URL }} && ./dumper.sh ${{ github.event.inputs.DUMP_FILE_NAME }} 
+        cd workspace && git clone https://github.com/DumprX/DumprX && cd DumprX && aria2c ${{ github.event.inputs.DUMP_URL }} && ./dumper.sh ${{ github.event.inputs.DUMP_FILE_NAME }} 
 
 
     - name: Upload to Release
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          DumprX/${{ github.event.inputs.DUMP_FILE_NAME }}
+          workspace/DumprX/${{ github.event.inputs.DUMP_FILE_NAME }}
         name: Dump .-.
         tag_name: ${{ github.run_id }}
         body: |
